@@ -1,0 +1,15 @@
+artifact_uri: /Users/sahilbodkhe/Desktop/Experiment4/SYDE770/runs/mlflow/283939179369314934/5e2aeef34d2e4c2295a80c9e9e574a6f/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '283939179369314934'
+lifecycle_stage: active
+run_id: 5e2aeef34d2e4c2295a80c9e9e574a6f
+run_name: train
+run_uuid: 5e2aeef34d2e4c2295a80c9e9e574a6f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1741812667348
+status: 1
+tags: []
+user_id: sahilbodkhe
