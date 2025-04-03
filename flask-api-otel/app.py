@@ -80,7 +80,7 @@ def load_model(model_name):
     if model_name not in models:
         model_path = os.path.join(MODELS_DIR, model_name)
         try:
-            models[model_name] = YOLO(model_path)
+            models[model_name] = YOLO(model_path, task='detect')
             print(f"Model {model_name} loaded successfully")
         except Exception as e:
             print(f"Error loading model {model_name}: {str(e)}")
@@ -661,4 +661,4 @@ monitor_thread = threading.Thread(target=monitor_metrics, daemon=True)
 monitor_thread.start()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, threaded=True)
+    app.run(host='0.0.0.0', port=5050, threaded=True)
