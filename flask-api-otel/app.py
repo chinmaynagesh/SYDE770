@@ -16,8 +16,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import io
 from collections import defaultdict
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, origins=["http://3.140.152.246:3001"])
+
 
 # Configuration
 MODELS_DIR = "models"

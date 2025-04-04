@@ -16,3 +16,4 @@ opentelemetry-instrumentation-flask
 opentelemetry-instrumentation 
 opentelemetry-exporter-prometheus 
 prometheus_client
+flask-cors
