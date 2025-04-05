@@ -19,8 +19,7 @@ from collections import defaultdict
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=["http://3.140.152.246:3001"])
-
+CORS(app)
 
 # Configuration
 MODELS_DIR = "models"
@@ -32,7 +31,7 @@ ANNOTATIONS_DIR = "annotations"
 os.makedirs(ANNOTATIONS_DIR, exist_ok=True)
 
 MODEL_INFO = {
-    "best1.pt": {
+    "best2.pt": {
         "config": {
             "input_size": [416,416],
             "batch_size": 64,
@@ -48,7 +47,7 @@ MODEL_INFO = {
             "class_metrics": defaultdict(dict)
         }
     },
-    "best2.pt": {
+    "best1.pt": {
         "config": {
             "input_size": [562, 562],
             "batch_size": 64,
