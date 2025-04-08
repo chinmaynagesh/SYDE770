@@ -18,8 +18,51 @@ import io
 from collections import defaultdict
 from flask_cors import CORS
 
+# OpenTelemetry tracing
+from opentelemetry import trace, metrics
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+# OpenTelemetry metrics
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
+
 app = Flask(__name__)
 CORS(app)
+
+# --- Tracing Setup ---
+resource = Resource(attributes={
+    SERVICE_NAME: "flask-api-service"
+})
+
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer_provider = trace.get_tracer_provider()
+
+span_exporter = OTLPSpanExporter(endpoint="http://otel-collector:4318/v1/traces")
+span_processor = BatchSpanProcessor(span_exporter)
+tracer_provider.add_span_processor(span_processor)
+
+# Instrument Flask for tracing
+FlaskInstrumentor().instrument_app(app)
+
+# --- Metrics Setup ---
+metric_exporter = OTLPMetricExporter(endpoint="http://otel-collector:4318/v1/metrics")
+
+metric_reader = PeriodicExportingMetricReader(metric_exporter)
+metrics.set_meter_provider(MeterProvider(metric_readers=[metric_reader]))
+
+meter = metrics.get_meter("flask-api-meter")
+request_counter = meter.create_counter(
+    "http_requests_total",
+    description="Total HTTP requests"
+)
+
+
 
 # Configuration
 MODELS_DIR = "models"
@@ -353,6 +396,7 @@ for model_name in MODEL_INFO:
 # Endpoints
 @app.route('/predict', methods=['POST'])
 def predict():
+    request_counter.add(1, attributes={"endpoint": "/predict", "method": "POST"})
     start_time = time.time()
     
     if 'image' not in request.files:
@@ -420,6 +464,8 @@ def predict():
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate_model():
+    request_counter.add(1, attributes={"endpoint": "/evaluate", "method": "POST"})
+
     if 'model' not in request.form:
         return jsonify({"error": "Model not specified"}), 400
     
@@ -532,6 +578,8 @@ def evaluate_model():
 
 @app.route('/metrics', methods=['GET'])
 def get_system_metrics():
+    request_counter.add(1, attributes={"endpoint": "/metrics", "method": "GET"})
+
     alert = check_for_alerts()
     metrics_data = calculate_metrics()
     
@@ -547,6 +595,8 @@ def get_system_metrics():
 
 @app.route('/metrics/models/<model_name>', methods=['GET'])
 def get_model_metrics_endpoint(model_name):
+    request_counter.add(1, attributes={"endpoint": "/metrics/models/"+model_name, "method": "GET"})
+
     if model_name not in MODEL_INFO:
         return jsonify({"error": "Model not found"}), 404
     
@@ -560,6 +610,7 @@ def get_model_metrics_endpoint(model_name):
 
 @app.route('/metrics/models/<model_name>/plot', methods=['GET'])
 def get_model_metrics_plot(model_name):
+    request_counter.add(1, attributes={"endpoint": "/metrics/models/"+model_name, "method": "GET"})
     if model_name not in MODEL_INFO:
         return jsonify({"error": "Model not found"}), 404
     
@@ -574,6 +625,8 @@ def get_model_metrics_plot(model_name):
 
 @app.route('/metrics/compare', methods=['GET'])
 def compare_models():
+    request_counter.add(1, attributes={"endpoint": "/metrics/compare", "method": "GET"})
+
     comparison = {}
     time_range = request.args.get('time_range', default=24, type=int)
     
@@ -593,12 +646,15 @@ def compare_models():
 
 @app.route('/management/models', methods=['GET'])
 def list_models():
+    request_counter.add(1, attributes={"endpoint": "/management/models", "method": "GET"})
+
     return jsonify({
         "available_models": list(MODEL_INFO.keys())
     })
 
 @app.route('/management/models/<model_name>/describe', methods=['GET'])
 def describe_model(model_name):
+    request_counter.add(1, attributes={"endpoint": "/management/models/"+model_name+"/describe", "method": "GET"})
     if model_name not in MODEL_INFO:
         return jsonify({"error": "Model not found"}), 404
     
@@ -621,6 +677,7 @@ def describe_model(model_name):
 
 @app.route('/management/models/<model_name>/set-default', methods=['GET'])
 def set_default_model(model_name):
+    request_counter.add(1, attributes={"endpoint": "/management/models/"+model_name+"/set-default", "method": "GET"})
     global current_default_model
     
     if model_name not in MODEL_INFO:
@@ -634,6 +691,7 @@ def set_default_model(model_name):
 
 @app.route('/health-status', methods=['GET'])
 def health_check():
+    request_counter.add(1, attributes={"endpoint": "/health-status", "method": "GET"})
     return jsonify({
         "status": "Healthy",
         "server": "Flask",
@@ -642,6 +700,7 @@ def health_check():
 
 @app.route('/group-info', methods=['GET'])
 def group_info():
+    request_counter.add(1, attributes={"endpoint": "/group-info", "method": "GET"})
     return jsonify({
         "group": "group4",
         "members": ["Sahil", "Chinmay", "Nandhini"]
@@ -663,4 +722,4 @@ monitor_thread = threading.Thread(target=monitor_metrics, daemon=True)
 monitor_thread.start()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, threaded=True)
+    app.run(host='0.0.0.0', port=6034, threaded=True)

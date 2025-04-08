@@ -3,7 +3,7 @@ version: "3.8"
 services:
   flask-app:
     ports:
-      - "5050:5050"
+      - "6034:6034"
     container_name: flask-api
     build:
       context: ./flask-api-otel
